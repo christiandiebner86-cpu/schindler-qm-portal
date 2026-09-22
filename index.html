@@ -1475,6 +1475,9 @@ body.document-viewer-open {
         id="loginEmail"
         type="email"
         autocomplete="off"
+        autocapitalize="none"
+        spellcheck="false"
+        readonly
         required
       >
 
@@ -1485,7 +1488,8 @@ body.document-viewer-open {
       <input
         id="loginPassword"
         type="password"
-        autocomplete="off"
+        autocomplete="new-password"
+        readonly
         required
       >
 
@@ -2742,6 +2746,57 @@ function clearLoginFields() {
 }
 
 
+/*
+ * Zusätzlicher Schutz für gemeinsam genutzte iPads:
+ * Firefox darf die Loginfelder beim Einblenden nicht automatisch
+ * mit den Zugangsdaten des vorherigen Mitarbeiters befüllen.
+ * Erst eine echte Benutzerinteraktion entsperrt das jeweilige Feld.
+ */
+function lockSharedDeviceLoginFields() {
+
+  ["loginEmail", "loginPassword"].forEach(
+    function(id) {
+      const input = getElement(id);
+
+      if (!input) {
+        return;
+      }
+
+      input.value = "";
+      input.readOnly = true;
+    }
+  );
+
+}
+
+
+function setupSharedDeviceLoginProtection() {
+
+  ["loginEmail", "loginPassword"].forEach(
+    function(id) {
+      const input = getElement(id);
+
+      if (!input || input.dataset.sharedDeviceReady === "true") {
+        return;
+      }
+
+      input.dataset.sharedDeviceReady = "true";
+
+      const unlock = function() {
+        input.readOnly = false;
+      };
+
+      input.addEventListener("pointerdown", unlock);
+      input.addEventListener("touchstart", unlock, { passive: true });
+      input.addEventListener("focus", unlock);
+    }
+  );
+
+  lockSharedDeviceLoginFields();
+
+}
+
+
 /* =========================================================
    AUTH TABS
 ========================================================= */
@@ -3531,6 +3586,13 @@ function showPortal() {
 
 
 function showAuthScreen() {
+
+  /*
+   * Vor jedem erneuten Anzeigen des Logins werden die Felder geleert
+   * und wieder gesperrt. Erst der nächste Fingertipp entsperrt sie.
+   */
+  clearLoginFields();
+  lockSharedDeviceLoginFields();
 
   getElement("portal").style.display =
     "none";
@@ -6287,6 +6349,7 @@ async function startApplication() {
 
   setupDocumentSearch();
 
+  setupSharedDeviceLoginProtection();
   setupLoginForm();
   setupRegisterForm();
 
