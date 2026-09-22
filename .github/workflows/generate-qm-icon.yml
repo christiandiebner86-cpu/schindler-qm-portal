@@ -100,19 +100,29 @@ jobs:
           master.save("qm-icon.png", optimize=True)
           master.resize((512, 512), Image.Resampling.LANCZOS).save("qm-icon-512.png", optimize=True)
           master.resize((192, 192), Image.Resampling.LANCZOS).save("qm-icon-192.png", optimize=True)
-          master.resize((180, 180), Image.Resampling.LANCZOS).save("apple-touch-icon.png", optimize=True)
+          master.resize((120, 120), Image.Resampling.LANCZOS).save("apple-touch-icon-120.png", optimize=True)
+          master.resize((152, 152), Image.Resampling.LANCZOS).save("apple-touch-icon-152.png", optimize=True)
+          master.resize((167, 167), Image.Resampling.LANCZOS).save("apple-touch-icon-167.png", optimize=True)
+          master.resize((180, 180), Image.Resampling.LANCZOS).save("apple-touch-icon-180.png", optimize=True)
+          # iPadOS/Safari verwendet in der Praxis häufig 152x152; auch der
+          # konventionelle Fallback-Pfad bekommt deshalb genau diese Größe.
+          master.resize((152, 152), Image.Resampling.LANCZOS).save("apple-touch-icon.png", optimize=True)
 
           # iPad / Browser auf die neuen Icons umstellen.
           index_path = Path("index.html")
           html = index_path.read_text(encoding="utf-8")
-          apple_tag = '<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=schindler-qm">'
-          if re.search(r'<link rel="apple-touch-icon"[^>]*>', html):
-              html = re.sub(r'<link rel="apple-touch-icon"[^>]*>', apple_tag, html, count=1)
-          else:
-              html = html.replace(
-                  '<meta name="apple-mobile-web-app-title" content="QM Schindler">',
-                  '<meta name="apple-mobile-web-app-title" content="QM Schindler">\n' + apple_tag
-              )
+          apple_tags = '\n'.join([
+              '<link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120.png?v=schindler-qm-v2">',
+              '<link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152.png?v=schindler-qm-v2">',
+              '<link rel="apple-touch-icon" sizes="167x167" href="/apple-touch-icon-167.png?v=schindler-qm-v2">',
+              '<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-180.png?v=schindler-qm-v2">',
+              '<link rel="apple-touch-icon-precomposed" href="/apple-touch-icon.png?v=schindler-qm-v2">'
+          ])
+          html = re.sub(r'\n?<link rel="apple-touch-icon(?:-precomposed)?"[^>]*>', '', html)
+          html = html.replace(
+              '<meta name="apple-mobile-web-app-title" content="QM Schindler">',
+              '<meta name="apple-mobile-web-app-title" content="QM Schindler">\n' + apple_tags
+          )
 
           html = re.sub(
               r'<link rel="icon"[^>]*>',
@@ -157,7 +167,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add qm-icon.png qm-icon-192.png qm-icon-512.png apple-touch-icon.png index.html site.webmanifest
+          git add qm-icon.png qm-icon-192.png qm-icon-512.png apple-touch-icon.png apple-touch-icon-120.png apple-touch-icon-152.png apple-touch-icon-167.png apple-touch-icon-180.png index.html site.webmanifest
           if git diff --cached --quiet; then
             echo "Keine Änderungen."
             exit 0
