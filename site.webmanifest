@@ -1,0 +1,17 @@
+{
+  "name": "QM-Portal Schindler Intensivpflege",
+  "short_name": "QM Schindler",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f3f7f6",
+  "theme_color": "#0b6570",
+  "icons": [
+    {
+      "src": "schindler-logo.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
