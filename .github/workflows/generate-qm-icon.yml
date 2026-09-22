@@ -105,15 +105,24 @@ jobs:
           # iPad / Browser auf die neuen Icons umstellen.
           index_path = Path("index.html")
           html = index_path.read_text(encoding="utf-8")
+          apple_tag = '<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=schindler-qm">'
+          if re.search(r'<link rel="apple-touch-icon"[^>]*>', html):
+              html = re.sub(r'<link rel="apple-touch-icon"[^>]*>', apple_tag, html, count=1)
+          else:
+              html = html.replace(
+                  '<meta name="apple-mobile-web-app-title" content="QM Schindler">',
+                  '<meta name="apple-mobile-web-app-title" content="QM Schindler">\n' + apple_tag
+              )
+
           html = re.sub(
-              r'<link rel="apple-touch-icon" href="[^"]+">',
-              '<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">',
+              r'<link rel="icon"[^>]*>',
+              '<link rel="icon" type="image/png" sizes="192x192" href="/qm-icon-192.png?v=schindler-qm">',
               html,
               count=1,
           )
           html = re.sub(
-              r'<link rel="icon" href="[^"]+">',
-              '<link rel="icon" type="image/png" sizes="192x192" href="qm-icon-192.png">',
+              r'<link rel="manifest"[^>]*>',
+              '<link rel="manifest" href="/site.webmanifest?v=schindler-qm">',
               html,
               count=1,
           )
@@ -121,16 +130,18 @@ jobs:
 
           manifest_path = Path("site.webmanifest")
           manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-          manifest["id"] = "./"
+          manifest["id"] = "/"
+          manifest["start_url"] = "/"
+          manifest["scope"] = "/"
           manifest["icons"] = [
               {
-                  "src": "qm-icon-192.png",
+                  "src": "/qm-icon-192.png?v=schindler-qm",
                   "sizes": "192x192",
                   "type": "image/png",
                   "purpose": "any"
               },
               {
-                  "src": "qm-icon-512.png",
+                  "src": "/qm-icon-512.png?v=schindler-qm",
                   "sizes": "512x512",
                   "type": "image/png",
                   "purpose": "any"
