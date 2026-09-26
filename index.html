@@ -4137,12 +4137,7 @@ async function loadAdminProfiles() {
           </td>
 
           <td>
-            ${profile.role==="admin"
-              ? "–"
-              : `<select class="admin-inline-select" onchange="setQmProfileTeam('${escapeHTML(profile.id)}',this.value)">
-                   <option value="">– Kein Team –</option>
-                   ${qmPortalTeams.map(t=>`<option value="${escapeHTML(t.name)}" ${profile.team===t.name?"selected":""}>${escapeHTML(t.name)}${t.is_springer?" (Springer)":""}</option>`).join("")}
-                 </select>`}
+            ${`<select class="admin-inline-select" onchange="setQmProfileTeam('${escapeHTML(profile.id)}',this.value)">${selectInner}</select>`}
           </td>
 
           <td>
@@ -4376,8 +4371,8 @@ function qmTeamOptions(selected){
 
 
 function qmTeamAssignmentControl(profile){
-  if(!profile || profile.role==="admin"){
-    return `<div style="font-size:12px;color:var(--muted);margin-top:7px">Team: –</div>`;
+  if(!profile){
+    return "";
   }
   return `
     <div class="admin-team-assignment">
