@@ -4716,9 +4716,8 @@ function fileURL(path) {
 
 
   return (
-    "https://" +
-    OWNER +
-    ".github.io/" +
+    window.location.origin +
+    "/" +
     parts.join("/")
   );
 
