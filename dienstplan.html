@@ -2944,6 +2944,24 @@ async function change(u,m,day,value,actorRole,actorName){
   const s=state(),k=recKey(u,m);if(!s.plans[k])s.plans[k]={entries:{},submitted:false,submittedAt:null,leaderEditedDays:{}};
   if(!s.plans[k].leaderEditedDays)s.plans[k].leaderEditedDays={};
   const old=s.plans[k].entries[day]||"";if(old===value)return;
+
+  // Harte Prüfung: Nachtdienst darf nicht direkt vor Tag- oder Bürodienst liegen.
+  const entries=s.plans[k].entries||{};
+  const previous=day>1?(entries[day-1]||""):"";
+  const next=day<days(m)?(entries[day+1]||""):"";
+  const conflictAfterNight=previous==="N" && ["T","B"].includes(value);
+  const conflictBeforeDay=value==="N" && ["T","B"].includes(next);
+  if(conflictAfterNight || conflictBeforeDay){
+    const issueDay=conflictAfterNight?day-1:day;
+    const followDay=conflictAfterNight?day:day+1;
+    const followValue=conflictAfterNight?value:next;
+    const followName=followValue==="T"?"Tagdienst":"Bürodienst";
+    alert("⚠️ Dienstplanfehler: "+USERS[u].name+" hat am "+issueDay+"."+m.split("-")[1]+" Nachtdienst und am "+followDay+"."+m.split("-")[1]+" direkt danach "+followName+". Diese Eintragung wurde nicht übernommen. Bitte eine andere Schicht wählen.");
+    if(actorRole==="leader")renderLead();
+    else if(actorRole==="employee")renderEmp();
+    else renderAdmin();
+    return;
+  }
   s.plans[k].entries[day]=value;
   if(actorRole==="leader"){
     s.plans[k].leaderEditedDays[day]=true;
@@ -3794,7 +3812,7 @@ function checkTeamDraftConflicts(users,entries,month){
     const shifts=entries[info.id]||{};
     for(let day=1;day<days(month);day++){
       const current=shifts[String(day)]||"",next=shifts[String(day+1)]||"";
-      if(current==="N" && next==="T")found.push({userId:info.id,name:info.name,day:day+1,message:"Am "+day+"."+month.split("-")[1]+" Nachtdienst und am "+(day+1)+"."+month.split("-")[1]+" direkt danach Tagdienst – bitte Ruhezeit prüfen."});
+      if(current==="N" && ["T","B"].includes(next))found.push({userId:info.id,name:info.name,day:day+1,message:"Am "+day+"."+month.split("-")[1]+" Nachtdienst und am "+(day+1)+"."+month.split("-")[1]+" direkt danach "+(next==="T"?"Tagdienst":"Bürodienst")+" – diese Folge ist zu prüfen."});
     }
   });
   return found;
@@ -3806,6 +3824,19 @@ async function saveTeamDraftCell(userId,day,value){
   if(!qmTeamDraftCache || qmTeamDraftCache.status==="finalized"){alert("Der endgültige Dienstplan ist gesperrt.");return;}
   if(!qmTeamDraftCache.entries)qmTeamDraftCache.entries={};
   if(!qmTeamDraftCache.entries[userId])qmTeamDraftCache.entries[userId]={};
+  const draftShifts=qmTeamDraftCache.entries[userId];
+  const previous=day>1?(draftShifts[String(day-1)]||""):"";
+  const next=day<days(month)?(draftShifts[String(day+1)]||""):"";
+  const conflictAfterNight=previous==="N" && ["T","B"].includes(value);
+  const conflictBeforeDay=value==="N" && ["T","B"].includes(next);
+  if(conflictAfterNight || conflictBeforeDay){
+    const issueDay=conflictAfterNight?day-1:day;
+    const followDay=conflictAfterNight?day:day+1;
+    const followValue=conflictAfterNight?value:next;
+    alert("⚠️ Dienstplanfehler: "+(conflictAfterNight?"Nachtdienst am ":"Nachtdienst am ")+issueDay+"."+month.split("-")[1]+" und "+(followValue==="T"?"Tagdienst":"Bürodienst")+" am "+followDay+"."+month.split("-")[1]+". Die Eintragung wurde nicht gespeichert.");
+    renderTeamDraftAdmin();
+    return;
+  }
   qmTeamDraftCache.entries[userId][String(day)]=value;
   const table=document.getElementById("adminTeamDraftTable");
   const status=document.getElementById("adminTeamDraftStatus");
