@@ -1005,7 +1005,7 @@ button.danger{
       <input id="adminMonth" type="month" onchange="refreshAdmin()">
       <button type="button" class="secondary" title="Nächster Monat" onclick="shiftPlanMonth('adminMonth',1,'refreshAdmin')">→</button>
     </div></div><div><label>Team</label><select id="adminTeam" onchange="renderAdmin()"><option value="ALL">Alle Teams</option></select></div><button class="secondary" onclick="logout()">Abmelden</button></div>
-<div class="notice">Tagdienst = grün, Nachtdienst = orange. Rot umrandet = Überschneidung oder Nachtdienst → Tag-/Bürodienst am Folgetag. Gelb umrandet = von Teamleitung geändert.</div>
+<div class="notice">Tagdienst = grün, Nachtdienst = orange. Rot umrandet = Überschneidung oder Nachtdienst → Tag-/Bürodienst oder Urlaub am Folgetag. Gelb umrandet = von Teamleitung geändert.</div>
 <div class="card" style="background:#f8fafc">
   <h3>Planungsvorschläge</h3>
   <div class="toolbar">
@@ -2945,7 +2945,7 @@ async function change(u,m,day,value,actorRole,actorName){
   if(!s.plans[k].leaderEditedDays)s.plans[k].leaderEditedDays={};
   const old=s.plans[k].entries[day]||"";if(old===value)return;
 
-  // Harte Prüfung: Nachtdienst darf nicht direkt vor Tag- oder Bürodienst liegen.
+  // Harte Prüfung: Nachtdienst darf nicht direkt vor Tagdienst, Bürodienst oder Urlaub liegen.
   const entries=s.plans[k].entries||{};
   const previous=day>1?(entries[day-1]||""):"";
   const next=day<days(m)?(entries[day+1]||""):"";
