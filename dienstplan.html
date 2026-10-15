@@ -966,6 +966,7 @@ button.danger{
       <button type="button" class="secondary" title="Nächster Monat" onclick="shiftPlanMonth('leadMonth',1,'refreshLead')">→</button>
     </div></div><button class="secondary" onclick="logout()">Abmelden</button></div>
 <div class="notice">Rot umrandet = Konflikt im Team. Das gilt für Überschneidungen bei Tagdienst, Nachtdienst, Wunschfrei und Urlaub sowie für die unzulässige Folge Nachtdienst → Tag-/Bürodienst am nächsten Tag.</div>
+<div class="card" id="leaderTeamDraftCard" style="margin:14px 0;border:2px solid #93c5fd;display:none"><h3>📅 Mein Monatsdienstplan</h3><div id="leaderTeamDraftStatus" class="notice" style="margin:10px 0"></div><div class="table-wrap"><table id="leaderTeamDraftTable"></table></div><div class="actions" id="leaderTeamDraftActions" style="margin-top:10px"><button type="button" class="primary" id="leaderTeamDraftConfirmBtn" onclick="respondTeamDraft('confirmed')">✅ Entwurf bestätigen</button><button type="button" class="warning" id="leaderTeamDraftChangeBtn" onclick="respondTeamDraft('change_requested')">✏️ Änderungsbedarf zurückmelden</button></div></div>
 <div class="card" style="background:#f8fafc">
   <h3>Planungsvorschläge</h3>
   <div class="toolbar">
