@@ -3365,6 +3365,7 @@ function renderLead(){
   document.getElementById("leadTitle").textContent="Teamleitung – "+session.team;
   if(document.getElementById("leadSuggestions"))document.getElementById("leadSuggestions").innerHTML="";
   document.getElementById("leadTable").innerHTML=tableFor(users,m,"leader");
+  void refreshTeamDraftEmployee();
 
   const submitted=users.filter(([u])=>getRec(u,m).submitted).length;
   const missing=users.filter(([u])=>!getRec(u,m).submitted);
@@ -3808,9 +3809,11 @@ async function finalizeTeamDraft(){
 }
 
 async function refreshTeamDraftEmployee(){
-  if(session.role!=="employee"||!session.user||!USERS[session.user])return;
-  const info=USERS[session.user],month=document.getElementById("empMonth")?.value||nowMonth();
-  const card=document.getElementById("employeeTeamDraftCard");
+  if(!["employee","leader"].includes(session.role)||!session.user||!USERS[session.user])return;
+  const prefix=session.role==="leader"?"leader":"employee";
+  const month=document.getElementById(session.role==="leader"?"leadMonth":"empMonth")?.value||nowMonth();
+  const info=USERS[session.user];
+  const card=document.getElementById(prefix+"TeamDraftCard");
   if(!card)return;
   try{
     const result=await qmSupabase.rpc("get_dutyplan_team_draft",{p_team:info.team,p_month:month});
@@ -3819,7 +3822,7 @@ async function refreshTeamDraftEmployee(){
     if(!["released","finalized"].includes(d.status)){card.style.display="none";return;}
     card.style.display="block";
     const response=d.responses?.[info.id];
-    const status=document.getElementById("employeeTeamDraftStatus");
+    const status=document.getElementById(prefix+"TeamDraftStatus");
     const finalized=d.status==="finalized";
     status.innerHTML=finalized
       ? '<span class="badge ok">✅ Endgültiger Dienstplan</span><div class="small">Freigegeben am '+esc(d.finalized_at?new Date(d.finalized_at).toLocaleString("de-DE"):"–")+'.</div>'
@@ -3837,11 +3840,11 @@ async function refreshTeamDraftEmployee(){
       h+='<td class="'+(weekend(month,day)?"weekend ":"")+valueClass(value)+'">'+esc(value||"–")+'</td>';
     }
     h+="</tr></tbody>";
-    document.getElementById("employeeTeamDraftTable").innerHTML=h;
-    const actions=document.getElementById("employeeTeamDraftActions");
+    document.getElementById(prefix+"TeamDraftTable").innerHTML=h;
+    const actions=document.getElementById(prefix+"TeamDraftActions");
     actions.style.display=finalized?"none":"flex";
-    document.getElementById("employeeTeamDraftConfirmBtn").disabled=!!response && response.status==="confirmed";
-    document.getElementById("employeeTeamDraftChangeBtn").disabled=!!response && response.status==="change_requested";
+    document.getElementById(prefix+"TeamDraftConfirmBtn").disabled=!!response && response.status==="confirmed";
+    document.getElementById(prefix+"TeamDraftChangeBtn").disabled=!!response && response.status==="change_requested";
   }catch(error){
     card.style.display="none";
     console.error("Teamdienstplan laden:",error);
@@ -3849,7 +3852,7 @@ async function refreshTeamDraftEmployee(){
 }
 
 async function respondTeamDraft(status){
-  const info=USERS[session.user],month=document.getElementById("empMonth")?.value||nowMonth();
+  const info=USERS[session.user],month=document.getElementById(session.role==="leader"?"leadMonth":"empMonth")?.value||nowMonth();
   if(!info)return;
   let note="";
   if(status==="change_requested"){
