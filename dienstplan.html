@@ -3674,6 +3674,7 @@ function draftMonth(){return document.getElementById("adminMonth")?.value || now
 function draftTeam(){return document.getElementById("adminDraftTeam")?.value || "";}
 function draftEntryFor(userId,day){return (qmTeamDraftCache?.entries?.[userId]||{})[String(day)]||"";}
 function draftResponseFor(userId){return (qmTeamDraftCache?.responses||{})[userId]||null;}
+function draftTeamUsers(team){return teamUsers(team).filter(([u,info])=>info.id&&(!info.isAdmin||info.isLeader));}
 
 function ensureDraftTeamOptions(){
   const select=document.getElementById("adminDraftTeam");
@@ -3720,7 +3721,7 @@ function renderTeamDraftAdmin(){
   const team=draftTeam(),month=draftMonth();
   if(!team){table.innerHTML="";return;}
   const d=qmTeamDraftCache||{status:"empty",entries:{},responses:{}};
-  const users=teamUsers(team).filter(([u,info])=>info.id);
+  const users=draftTeamUsers(team);
   const finalized=d.status==="finalized", released=d.status==="released";
   let h="<thead><tr><th>Mitarbeiter/in</th>";
   for(let day=1;day<=days(month);day++)h+='<th class="'+(weekend(month,day)?"weekend":"")+'"><div class="day">'+day+'</div><div class="weekday">'+weekday(month,day)+'</div></th>';
