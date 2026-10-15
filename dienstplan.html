@@ -2949,8 +2949,8 @@ async function change(u,m,day,value,actorRole,actorName){
   const entries=s.plans[k].entries||{};
   const previous=day>1?(entries[day-1]||""):"";
   const next=day<days(m)?(entries[day+1]||""):"";
-  const conflictAfterNight=previous==="N" && ["T","B","U"].includes(value);
-  const conflictBeforeDay=value==="N" && ["T","B","U"].includes(next);
+  const conflictAfterNight=previous==="N" && ["T","B","U","Urlaub"].includes(value);
+  const conflictBeforeDay=value==="N" && ["T","B","U","Urlaub"].includes(next);
   if(conflictAfterNight || conflictBeforeDay){
     const issueDay=conflictAfterNight?day-1:day;
     const followDay=conflictAfterNight?day:day+1;
@@ -3812,7 +3812,7 @@ function checkTeamDraftConflicts(users,entries,month){
     const shifts=entries[info.id]||{};
     for(let day=1;day<days(month);day++){
       const current=shifts[String(day)]||"",next=shifts[String(day+1)]||"";
-      if(current==="N" && ["T","B","U"].includes(next))found.push({userId:info.id,name:info.name,day:day+1,message:"Am "+day+"."+month.split("-")[1]+" Nachtdienst und am "+(day+1)+"."+month.split("-")[1]+" direkt danach "+(next==="T"?"Tagdienst":next==="B"?"Bürodienst":"Urlaub")+" – diese Folge ist unzulässig."});
+      if(current==="N" && ["T","B","U","Urlaub"].includes(next))found.push({userId:info.id,name:info.name,day:day+1,message:"Am "+day+"."+month.split("-")[1]+" Nachtdienst und am "+(day+1)+"."+month.split("-")[1]+" direkt danach "+(next==="T"?"Tagdienst":next==="B"?"Bürodienst":"Urlaub")+" – diese Folge ist unzulässig."});
     }
   });
   return found;
@@ -3827,8 +3827,8 @@ async function saveTeamDraftCell(userId,day,value){
   const draftShifts=qmTeamDraftCache.entries[userId];
   const previous=day>1?(draftShifts[String(day-1)]||""):"";
   const next=day<days(month)?(draftShifts[String(day+1)]||""):"";
-  const conflictAfterNight=previous==="N" && ["T","B","U"].includes(value);
-  const conflictBeforeDay=value==="N" && ["T","B","U"].includes(next);
+  const conflictAfterNight=previous==="N" && ["T","B","U","Urlaub"].includes(value);
+  const conflictBeforeDay=value==="N" && ["T","B","U","Urlaub"].includes(next);
   if(conflictAfterNight || conflictBeforeDay){
     const issueDay=conflictAfterNight?day-1:day;
     const followDay=conflictAfterNight?day:day+1;
