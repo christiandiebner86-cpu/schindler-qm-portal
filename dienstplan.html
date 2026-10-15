@@ -3701,6 +3701,10 @@ async function refreshTeamDraftAdmin(){
   const key=team+"|"+month;
   qmTeamDraftLoading=true;
   const status=document.getElementById("adminTeamDraftStatus");
+  const releaseButton=document.getElementById("adminTeamDraftReleaseBtn");
+  const finalizeButton=document.getElementById("adminTeamDraftFinalizeBtn");
+  if(releaseButton)releaseButton.disabled=true;
+  if(finalizeButton)finalizeButton.disabled=true;
   if(status)status.textContent="Teamplan wird geladen …";
   try{
     const result=await qmSupabase.rpc("get_dutyplan_team_draft",{p_team:team,p_month:month});
@@ -3837,7 +3841,8 @@ async function refreshTeamDraftEmployee(){
     h+="</tr></thead><tbody><tr><th>"+esc(info.name)+"</th>";
     for(let day=1;day<=daysInMonth;day++){
       const value=d.entries?.[info.id]?.[String(day)]||"";
-      h+='<td class="'+(weekend(month,day)?"weekend ":"")+valueClass(value)+'">'+esc(value||"–")+'</td>';
+      const label=({"T":"Tagdienst","N":"Nachtdienst","B":"Büro","HO":"Home-Office","WF":"Wunschfrei","Urlaub":"Urlaub","Flex":"Flexibel"})[value]||value||"–";
+      h+='<td class="'+(weekend(month,day)?"weekend ":"")+valueClass(value)+'">'+esc(label)+'</td>';
     }
     h+="</tr></tbody>";
     document.getElementById(prefix+"TeamDraftTable").innerHTML=h;
