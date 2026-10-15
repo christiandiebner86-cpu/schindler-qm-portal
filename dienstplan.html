@@ -1066,7 +1066,7 @@ button.danger{
     <button type="button" class="secondary" onclick="refreshTeamDraftAdmin()">Aktualisieren</button>
   </div>
 </div>
-<div id="adminApprovalStatus" style="margin:12px 0"></div><div class="actions"><button class="secondary" onclick="openTimesheetAdmin()">🕒 Stundenzettel – Admin</button><button class="secondary" onclick="openVacation()">Jahres-Urlaubswünsche</button></div><div class="table-wrap"><table id="adminTable"></table></div>
+<div id="adminApprovalStatus" style="margin:12px 0"></div><div class="actions"><button class="secondary" onclick="openTimesheetAdmin()">🕒 Stundenzettel – Admin</button><button class="secondary" onclick="openVacation()">Jahres-Urlaubswünsche</button></div><div id="adminRestWarnings" aria-live="polite"></div><div class="table-wrap"><table id="adminTable"></table></div>
 </div>
 <div class="card"><h3>Änderungsprotokoll Admin</h3><div class="table-wrap"><table class="log" id="adminLog"></table></div></div>
 </section>
@@ -3552,6 +3552,22 @@ function renderAdmin(){
 
   if(document.getElementById("adminSuggestions"))document.getElementById("adminSuggestions").innerHTML="";
   document.getElementById("adminTable").innerHTML=tableFor(users,m,"admin");
+  const restWarnings=document.getElementById("adminRestWarnings");
+  if(restWarnings){
+    const issues=[];
+    users.forEach(([u,info])=>{
+      const rec=getRec(u,m);
+      for(let day=1;day<=days(m);day++){
+        const current=rec.entries[day]||"",previous=rec.entries[day-1]||"";
+        if(previous==="N" && ["T","B"].includes(current)){
+          issues.push(info.name+": "+(day-1)+"."+m.split("-")[1]+" Nachtdienst → "+day+"."+m.split("-")[1]+" "+(current==="T"?"Tagdienst":"Bürodienst")+" (Ruhezeit prüfen).");
+        }
+      }
+    });
+    restWarnings.innerHTML=issues.length
+      ? '<div class="draft-conflicts"><b>⚠️ Dienstplan prüfen – '+issues.length+' problematische Dienstfolge(n)</b><ul>'+issues.map(x=>'<li>'+esc(x)+'</li>').join("")+'</ul></div>'
+      : '<div class="draft-conflicts-ok">✓ Keine Nachtdienst→Tag-/Bürodienst-Folge in der angezeigten Übersicht gefunden.</div>';
+  }
 
   const teams=t==="ALL"?TEAMS:[t];
 
