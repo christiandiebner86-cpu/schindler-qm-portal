@@ -3664,7 +3664,7 @@ function renderAdminPreparation(){
   }
   const r=getRec(u,month);
   const preparedAt=r.leaderEditedDays && r.leaderEditedDays._adminPreparedAt;
-  table.innerHTML=tableFor([[u,USERS[u]],],month,"adminPrepare");
+  table.innerHTML=tableFor([[u,USERS[u]]],month,"adminPrepare");
   if(r.submitted){
     status.innerHTML='<span class="badge ok">Dieser Plan wurde bereits abgegeben.</span><div class="small">Die Vorbereitung ist gesperrt. Wenn eine Korrektur nötig ist, nutze bitte den bestehenden Admin-Planprozess.</div>';
     publishBtn.disabled=true;
