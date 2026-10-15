@@ -929,6 +929,15 @@ button.danger{
       <button type="button" class="secondary" title="Nächster Monat" onclick="shiftPlanMonth('empMonth',1,'refreshEmp')">→</button>
     </div></div><button class="secondary" onclick="logout()">Abmelden</button></div>
 <div id="empStatus" style="margin:12px 0"></div>
+<div class="card" id="employeeTeamDraftCard" style="margin-top:12px;display:none;border:2px solid #93c5fd">
+  <h3>📅 Mein Monatsdienstplan</h3>
+  <div id="employeeTeamDraftStatus" class="notice" style="margin:10px 0"></div>
+  <div class="table-wrap"><table id="employeeTeamDraftTable"></table></div>
+  <div class="actions" id="employeeTeamDraftActions" style="margin-top:10px">
+    <button type="button" class="primary" id="employeeTeamDraftConfirmBtn" onclick="respondTeamDraft('confirmed')">✅ Entwurf bestätigen</button>
+    <button type="button" class="warning" id="employeeTeamDraftChangeBtn" onclick="respondTeamDraft('change_requested')">✏️ Änderungsbedarf zurückmelden</button>
+  </div>
+</div>
 <div class="card" style="margin-top:12px">
   <h3>Meine Dienstwünsche</h3>
   <div class="small" style="margin-bottom:8px">Hier trägst du für jeden Tag deinen Wunsch ein.</div>
@@ -1040,6 +1049,21 @@ button.danger{
   </div>
   <div id="adminPrepareStatus" class="notice" style="margin-top:10px">Bitte einen Mitarbeiter auswählen.</div>
   <div class="table-wrap"><table id="adminPrepareTable"></table></div>
+</div>
+<div class="card" id="adminTeamDraftCard" style="margin:14px 0;border:2px solid #93c5fd">
+  <h3>📅 Endgültigen Monatsdienstplan für ein ganzes Team vorbereiten</h3>
+  <div class="small">Dieser Ablauf ist zusätzlich zum bisherigen Teamleitungs-Verfahren. Hier planst du den fertigen Dienstplan mit den tatsächlichen Diensten. Nach der Freigabe bestätigen die Mitarbeiter den Entwurf oder melden Änderungsbedarf zurück.</div>
+  <div class="toolbar" style="margin-top:10px">
+    <div><label>Team</label><select id="adminDraftTeam" onchange="refreshTeamDraftAdmin()"></select></div>
+    <div><label>Monat</label><span id="adminDraftMonthLabel" class="small"></span></div>
+  </div>
+  <div id="adminTeamDraftStatus" class="notice" style="margin:10px 0">Lade Teamplan …</div>
+  <div class="table-wrap"><table id="adminTeamDraftTable"></table></div>
+  <div class="actions" style="margin-top:10px">
+    <button type="button" class="primary" id="adminTeamDraftReleaseBtn" onclick="releaseTeamDraft()">📨 Entwurf an Team freigeben</button>
+    <button type="button" class="primary" id="adminTeamDraftFinalizeBtn" onclick="finalizeTeamDraft()">✅ Endgültigen Dienstplan freigeben</button>
+    <button type="button" class="secondary" onclick="refreshTeamDraftAdmin()">Aktualisieren</button>
+  </div>
 </div>
 <div id="adminApprovalStatus" style="margin:12px 0"></div><div class="actions"><button class="secondary" onclick="openTimesheetAdmin()">🕒 Stundenzettel – Admin</button><button class="secondary" onclick="openVacation()">Jahres-Urlaubswünsche</button></div><div class="table-wrap"><table id="adminTable"></table></div>
 </div>
@@ -3250,6 +3274,7 @@ function renderEmp(){
   if(wishTable){
     wishTable.innerHTML=renderEmployeeWishTable(session.user,m);
   }
+  void refreshTeamDraftEmployee();
 
   const a=getApproval(info.team,m);
   const btn=document.getElementById("employeeConfirmBtn");
@@ -3464,6 +3489,9 @@ async function reopenAdminOwn(){
 }
 
 function renderAdmin(){
+  ensureDraftTeamOptions();
+  renderTeamDraftAdmin();
+  void refreshTeamDraftAdmin();
   const m=document.getElementById("adminMonth").value;
   const t=document.getElementById("adminTeam").value;
   const users=Object.entries(USERS).filter(([u,i])=>t==="ALL"||i.team===t);
@@ -3637,6 +3665,203 @@ function renderAdmin(){
 
   renderLog("adminLog",m,t,false);
 }
+
+let qmTeamDraftCache=null;
+let qmTeamDraftKey="";
+let qmTeamDraftLoading=false;
+
+function draftMonth(){return document.getElementById("adminMonth")?.value || nowMonth();}
+function draftTeam(){return document.getElementById("adminDraftTeam")?.value || "";}
+function draftEntryFor(userId,day){return (qmTeamDraftCache?.entries?.[userId]||{})[String(day)]||"";}
+function draftResponseFor(userId){return (qmTeamDraftCache?.responses||{})[userId]||null;}
+
+function ensureDraftTeamOptions(){
+  const select=document.getElementById("adminDraftTeam");
+  if(!select)return;
+  const previous=select.value;
+  const teams=[...new Set(Object.values(USERS).map(x=>x.team).filter(t=>t&&t!=="Nicht zugeordnet"))].sort((a,b)=>a.localeCompare(b,"de"));
+  select.innerHTML=teams.map(t=>'<option value="'+esc(t)+'">'+esc(t)+'</option>').join("");
+  if(teams.includes(previous))select.value=previous;
+  else {
+    const adminTeam=document.getElementById("adminTeam")?.value;
+    select.value=adminTeam && adminTeam!=="ALL" && teams.includes(adminTeam)?adminTeam:(teams[0]||"");
+  }
+}
+
+async function refreshTeamDraftAdmin(){
+  if(session.role!=="admin")return;
+  ensureDraftTeamOptions();
+  const team=draftTeam(),month=draftMonth();
+  const label=document.getElementById("adminDraftMonthLabel");
+  if(label)label.textContent=month;
+  if(!team){const st=document.getElementById("adminTeamDraftStatus");if(st)st.textContent="Kein Team verfügbar.";return;}
+  const key=team+"|"+month;
+  qmTeamDraftLoading=true;
+  const status=document.getElementById("adminTeamDraftStatus");
+  if(status)status.textContent="Teamplan wird geladen …";
+  try{
+    const result=await qmSupabase.rpc("get_dutyplan_team_draft",{p_team:team,p_month:month});
+    if(result.error)throw result.error;
+    if(draftTeam()+"|"+draftMonth()!==key)return;
+    qmTeamDraftCache=result.data||{team,month,entries:{},responses:{},status:"empty"};
+    qmTeamDraftKey=key;
+    renderTeamDraftAdmin();
+  }catch(error){
+    if(status)status.textContent="Teamplan konnte nicht geladen werden: "+(error.message||"Unbekannter Fehler");
+  }finally{qmTeamDraftLoading=false;}
+}
+
+function renderTeamDraftAdmin(){
+  const table=document.getElementById("adminTeamDraftTable");
+  const status=document.getElementById("adminTeamDraftStatus");
+  const releaseBtn=document.getElementById("adminTeamDraftReleaseBtn");
+  const finalBtn=document.getElementById("adminTeamDraftFinalizeBtn");
+  if(!table||!status||!releaseBtn||!finalBtn)return;
+  const team=draftTeam(),month=draftMonth();
+  if(!team){table.innerHTML="";return;}
+  const d=qmTeamDraftCache||{status:"empty",entries:{},responses:{}};
+  const users=teamUsers(team).filter(([u,info])=>info.id);
+  const finalized=d.status==="finalized", released=d.status==="released";
+  let h="<thead><tr><th>Mitarbeiter/in</th>";
+  for(let day=1;day<=days(month);day++)h+='<th class="'+(weekend(month,day)?"weekend":"")+'"><div class="day">'+day+'</div><div class="weekday">'+weekday(month,day)+'</div></th>';
+  h+="</tr></thead><tbody>";
+  users.forEach(([u,info])=>{
+    const response=d.responses?.[info.id];
+    const responseLabel=response?.status==="confirmed"?" · bestätigt":response?.status==="change_requested"?" · Änderung gewünscht":released?" · Rückmeldung offen":"";
+    h+='<tr><th>'+esc(info.name)+'<div class="small">'+esc(info.team)+responseLabel+'</div></th>';
+    for(let day=1;day<=days(month);day++){
+      const value=d.entries?.[info.id]?.[String(day)]||"";
+      h+='<td class="'+(weekend(month,day)?"weekend ":"")+valueClass(value)+'"><select class="cell" '+(finalized?"disabled":"")+' onchange="saveTeamDraftCell(\''+info.id+'\','+day+',this.value)">'+optionsForUser(u,value)+'</select></td>';
+    }
+    h+="</tr>";
+  });
+  h+="</tbody>";
+  const active=document.activeElement;
+  if(!(active&&table.contains(active)))table.innerHTML=h;
+  const responses=d.responses||{};
+  const confirmed=users.filter(([u,info])=>responses[info.id]?.status==="confirmed").length;
+  const changes=users.filter(([u,info])=>responses[info.id]?.status==="change_requested");
+  const pending=users.filter(([u,info])=>!responses[info.id] || responses[info.id].status!=="confirmed");
+  if(finalized){
+    status.innerHTML='<span class="badge ok">✅ Endgültiger Dienstplan freigegeben</span><div class="small">Freigegeben am '+esc(d.finalized_at?new Date(d.finalized_at).toLocaleString("de-DE"):"–")+'.</div>';
+  }else if(released){
+    status.innerHTML='<b>Entwurf beim Team</b><div class="small">'+confirmed+' von '+users.length+' bestätigt. '+changes.length+' Änderungswunsch(e); '+pending.length+' Person(en) noch nicht abschließend bestätigt.</div>'+
+      (changes.length?'<div class="small">Änderungswünsche: '+changes.map(([u,info])=>esc(info.name)+(responses[info.id]?.note?': '+esc(responses[info.id].note):'')).join(' · ')+'</div>':'');
+  }else{
+    status.innerHTML='<b>Entwurf in Vorbereitung</b><div class="small">Änderungen werden gespeichert. Nach der Freigabe erhält das Team den Plan zur Rückmeldung.</div>';
+  }
+  releaseBtn.disabled=finalized || users.length===0;
+  releaseBtn.textContent=released?"🔁 Überarbeitete Fassung erneut freigeben":"📨 Entwurf an Team freigeben";
+  finalBtn.disabled=!released || pending.length>0 || users.length===0;
+  finalBtn.style.display=finalized?"none":"inline-block";
+}
+
+async function saveTeamDraftCell(userId,day,value){
+  const team=draftTeam(),month=draftMonth(),key=team+"|"+month;
+  if(!qmTeamDraftCache || qmTeamDraftKey!==key)await refreshTeamDraftAdmin();
+  if(!qmTeamDraftCache || qmTeamDraftCache.status==="finalized"){alert("Der endgültige Dienstplan ist gesperrt.");return;}
+  if(!qmTeamDraftCache.entries)qmTeamDraftCache.entries={};
+  if(!qmTeamDraftCache.entries[userId])qmTeamDraftCache.entries[userId]={};
+  qmTeamDraftCache.entries[userId][String(day)]=value;
+  const table=document.getElementById("adminTeamDraftTable");
+  const status=document.getElementById("adminTeamDraftStatus");
+  try{
+    const result=await qmSupabase.rpc("save_dutyplan_team_draft",{p_team:team,p_month:month,p_entries:qmTeamDraftCache.entries,p_release:false});
+    if(result.error)throw result.error;
+    qmTeamDraftCache=result.data;qmTeamDraftKey=key;
+    if(status)status.textContent="Änderung gespeichert. Falls der Entwurf bereits freigegeben war, muss die überarbeitete Fassung erneut freigegeben werden.";
+    renderTeamDraftAdmin();
+  }catch(error){
+    if(status)status.textContent="Speichern fehlgeschlagen: "+(error.message||"Unbekannter Fehler");
+    alert("Dienstplan-Änderung konnte nicht gespeichert werden: "+(error.message||"Unbekannter Fehler"));
+  }
+}
+
+async function releaseTeamDraft(){
+  const team=draftTeam(),month=draftMonth();
+  if(!team)return;
+  const users=teamUsers(team).filter(([u,info])=>info.id);
+  if(!users.length){alert("Für dieses Team sind keine Mitarbeiter hinterlegt.");return;}
+  if(!confirm("Den Monatsdienstplan-Entwurf für "+team+" ("+month+") an alle "+users.length+" Mitarbeiter freigeben? Eventuelle bisherige Rückmeldungen werden zurückgesetzt."))return;
+  try{
+    const result=await qmSupabase.rpc("save_dutyplan_team_draft",{p_team:team,p_month:month,p_entries:qmTeamDraftCache?.entries||{},p_release:true});
+    if(result.error)throw result.error;
+    qmTeamDraftCache=result.data;qmTeamDraftKey=team+"|"+month;
+    renderTeamDraftAdmin();
+    await refreshTeamDraftEmployee();
+    alert("Der Entwurf wurde für das Team freigegeben.");
+  }catch(error){alert("Freigabe fehlgeschlagen: "+(error.message||"Unbekannter Fehler"));}
+}
+
+async function finalizeTeamDraft(){
+  const team=draftTeam(),month=draftMonth();
+  if(!confirm("Den Dienstplan für "+team+" ("+month+") jetzt endgültig freigeben? Danach ist diese Fassung gesperrt."))return;
+  try{
+    const result=await qmSupabase.rpc("finalize_dutyplan_team_draft",{p_team:team,p_month:month});
+    if(result.error)throw result.error;
+    qmTeamDraftCache=result.data;
+    renderTeamDraftAdmin();
+    alert("Der endgültige Dienstplan wurde freigegeben.");
+  }catch(error){alert("Endgültige Freigabe nicht möglich: "+(error.message||"Bitte prüfe die Rückmeldungen des Teams."));}
+}
+
+async function refreshTeamDraftEmployee(){
+  if(session.role!=="employee"||!session.user||!USERS[session.user])return;
+  const info=USERS[session.user],month=document.getElementById("empMonth")?.value||nowMonth();
+  const card=document.getElementById("employeeTeamDraftCard");
+  if(!card)return;
+  try{
+    const result=await qmSupabase.rpc("get_dutyplan_team_draft",{p_team:info.team,p_month:month});
+    if(result.error)throw result.error;
+    const d=result.data||{};
+    if(!["released","finalized"].includes(d.status)){card.style.display="none";return;}
+    card.style.display="block";
+    const response=d.responses?.[info.id];
+    const status=document.getElementById("employeeTeamDraftStatus");
+    const finalized=d.status==="finalized";
+    status.innerHTML=finalized
+      ? '<span class="badge ok">✅ Endgültiger Dienstplan</span><div class="small">Freigegeben am '+esc(d.finalized_at?new Date(d.finalized_at).toLocaleString("de-DE"):"–")+'.</div>'
+      : response?.status==="confirmed"
+        ? '<span class="badge ok">Du hast diesen Entwurf bestätigt.</span><div class="small">Bestätigt am '+esc(response.responded_at?new Date(response.responded_at).toLocaleString("de-DE"):"–")+'.</div>'
+        : response?.status==="change_requested"
+          ? '<span class="badge wait">Änderungsbedarf gemeldet</span><div class="small">Deine Rückmeldung: '+esc(response.note||"Kein Kommentar angegeben")+'. Warte bitte auf die überarbeitete Fassung.</div>'
+          : '<span class="badge wait">Bitte prüfe deinen Dienstplan und bestätige ihn oder melde Änderungsbedarf.</span>';
+    const daysInMonth=days(month);
+    let h="<thead><tr><th>Tag</th>";
+    for(let day=1;day<=daysInMonth;day++)h+='<th class="'+(weekend(month,day)?"weekend":"")+'"><div class="day">'+day+'</div><div class="weekday">'+weekday(month,day)+'</div></th>';
+    h+="</tr></thead><tbody><tr><th>"+esc(info.name)+"</th>";
+    for(let day=1;day<=daysInMonth;day++){
+      const value=d.entries?.[info.id]?.[String(day)]||"";
+      h+='<td class="'+(weekend(month,day)?"weekend ":"")+valueClass(value)+'">'+esc(value||"–")+'</td>';
+    }
+    h+="</tr></tbody>";
+    document.getElementById("employeeTeamDraftTable").innerHTML=h;
+    const actions=document.getElementById("employeeTeamDraftActions");
+    actions.style.display=finalized?"none":"flex";
+    document.getElementById("employeeTeamDraftConfirmBtn").disabled=!!response && response.status==="confirmed";
+    document.getElementById("employeeTeamDraftChangeBtn").disabled=!!response && response.status==="change_requested";
+  }catch(error){
+    card.style.display="none";
+    console.error("Teamdienstplan laden:",error);
+  }
+}
+
+async function respondTeamDraft(status){
+  const info=USERS[session.user],month=document.getElementById("empMonth")?.value||nowMonth();
+  if(!info)return;
+  let note="";
+  if(status==="change_requested"){
+    note=prompt("Welche Änderung wünschst du? Bitte möglichst den Tag und den Grund nennen:")||"";
+    if(!note.trim()){alert("Bitte beschreibe kurz den Änderungsbedarf.");return;}
+  }else if(!confirm("Den angezeigten Dienstplan-Entwurf verbindlich als geprüft bestätigen?"))return;
+  try{
+    const result=await qmSupabase.rpc("respond_dutyplan_team_draft",{p_team:info.team,p_month:month,p_status:status,p_note:note});
+    if(result.error)throw result.error;
+    await refreshTeamDraftEmployee();
+    alert(status==="confirmed"?"Deine Bestätigung wurde gespeichert.":"Dein Änderungswunsch wurde an die Administration zurückgemeldet.");
+  }catch(error){alert("Rückmeldung konnte nicht gespeichert werden: "+(error.message||"Unbekannter Fehler"));}
+}
+
 function renderAdminPreparation(){
   const month=document.getElementById("adminMonth")?.value || nowMonth();
   const teamFilter=document.getElementById("adminTeam")?.value || "ALL";
@@ -4053,6 +4278,7 @@ async function refreshEmp(){
   try{
     await qmLoadPlansForMonth(m);
     await qmLoadTeamApprovals(m);
+    await refreshTeamDraftEmployee();
   }catch(error){
     console.error("Dienstwunschplan laden:",error);
     alert("Dienstwunschplan konnte nicht aus Supabase geladen werden: "+(error.message||"Unbekannter Fehler"));
@@ -4077,6 +4303,7 @@ async function refreshAdmin(){
   try{
     await qmLoadPlansForMonth(m);
     await qmLoadTeamApprovals(m);
+    await refreshTeamDraftAdmin();
   }catch(error){
     console.error("Dienstwunschplan laden:",error);
     alert("Dienstwunschplan konnte nicht aus Supabase geladen werden: "+(error.message||"Unbekannter Fehler"));
