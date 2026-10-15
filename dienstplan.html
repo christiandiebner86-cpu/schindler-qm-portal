@@ -20,7 +20,7 @@ table{border-collapse:separate;border-spacing:0;min-width:2100px;width:100%;back
 thead th{position:sticky;top:0;background:#eef2f7;z-index:3;height:58px;min-width:62px}thead th:first-child{left:0;z-index:5;min-width:200px}
 tbody th{position:sticky;left:0;background:#fff;z-index:2;min-width:200px;padding:8px;text-align:left}.day{font-weight:800}.weekday{font-size:11px;color:var(--muted)}
 .cell{width:100%;height:55px;border:0;background:transparent;text-align:center;outline:none}.cell:focus{box-shadow:inset 0 0 0 2px var(--accent);background:#eff6ff}.weekend{background:#f8fafc}
-.leader-edited{box-shadow:inset 0 0 0 3px #eab308!important}.conflict{box-shadow:inset 0 0 0 3px #ef4444!important}.dienst-tag{background:#86efac!important}.dienst-nacht{background:#fdba74!important}.dienst-wf{background:#fde047!important}.dienst-urlaub{background:#93c5fd!important}.dienst-flex{background:#d8b4fe!important}.dienst-buero{background:#bfdbfe!important}.dienst-homeoffice{background:#a7f3d0!important}
+.leader-edited{box-shadow:inset 0 0 0 3px #eab308!important}.conflict{box-shadow:inset 0 0 0 3px #ef4444!important}.shift-conflict{box-shadow:inset 0 0 0 3px #dc2626!important;background:#fee2e2!important}.draft-conflicts{margin-top:10px;padding:10px 12px;background:#fee2e2;color:#991b1b;border-radius:8px}.draft-conflicts ul{margin:6px 0 0;padding-left:20px}.draft-conflicts-ok{margin-top:8px;color:#166534;font-size:13px}.dienst-tag{background:#86efac!important}.dienst-nacht{background:#fdba74!important}.dienst-wf{background:#fde047!important}.dienst-urlaub{background:#93c5fd!important}.dienst-flex{background:#d8b4fe!important}.dienst-buero{background:#bfdbfe!important}.dienst-homeoffice{background:#a7f3d0!important}
 .log{width:100%;border-collapse:collapse;min-width:850px}.log th,.log td{padding:9px 10px;text-align:left;border-bottom:1px solid var(--line)}.log th{background:#f8fafc}
 .legend{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:10px 0}.swatch{width:24px;height:18px;border-radius:4px;display:inline-block}
 @media(max-width:900px){.login-grid{grid-template-columns:1fr}main{padding:10px}.card{padding:12px}}
@@ -3738,13 +3738,21 @@ function renderTeamDraftAdmin(){
     h+='<tr><th>'+esc(info.name)+'<div class="small">'+esc(info.team)+responseLabel+'</div></th>';
     for(let day=1;day<=days(month);day++){
       const value=d.entries?.[info.id]?.[String(day)]||"";
-      h+='<td class="'+(weekend(month,day)?"weekend ":"")+valueClass(value)+'"><select class="cell" '+(finalized?"disabled":"")+' onchange="saveTeamDraftCell(\''+info.id+'\','+day+',this.value)">'+optionsForUser(u,value)+'</select></td>';
+      h+='<td data-draft-user="'+esc(info.id)+'" data-draft-day="'+day+'" class="'+(weekend(month,day)?"weekend ":"")+valueClass(value)+'"><select class="cell" '+(finalized?"disabled":"")+' onchange="saveTeamDraftCell(\''+info.id+'\','+day+',this.value)">'+optionsForUser(u,value)+'</select></td>';
     }
     h+="</tr>";
   });
   h+="</tbody>";
   const active=document.activeElement;
   if(!(active&&table.contains(active)))table.innerHTML=h;
+  const conflicts=checkTeamDraftConflicts(users,d.entries||{},month);
+  table.querySelectorAll("td[data-draft-user]").forEach(td=>{
+    const issue=conflicts.find(c=>c.userId===td.dataset.draftUser && (String(c.day)===td.dataset.draftDay || String(c.day-1)===td.dataset.draftDay));
+    if(issue){td.classList.add("shift-conflict");td.title=issue.message;}
+  });
+  const conflictHtml=conflicts.length
+    ? '<div class="draft-conflicts"><b>⚠️ '+conflicts.length+' mögliche Dienstplanfehler</b><ul>'+conflicts.map(c=>'<li>'+esc(c.name)+': '+esc(c.message)+'</li>').join("")+'</ul></div>'
+    : '<div class="draft-conflicts-ok">✓ Keine der geprüften problematischen Dienstfolgen gefunden.</div>';
   const responses=d.responses||{};
   const confirmed=users.filter(([u,info])=>responses[info.id]?.status==="confirmed").length;
   const changes=users.filter(([u,info])=>responses[info.id]?.status==="change_requested");
@@ -3760,7 +3768,20 @@ function renderTeamDraftAdmin(){
   releaseBtn.disabled=finalized || users.length===0;
   releaseBtn.textContent=released?"🔁 Überarbeitete Fassung erneut freigeben":"📨 Entwurf an Team freigeben";
   finalBtn.disabled=!released || pending.length>0 || users.length===0;
+  status.innerHTML+=conflictHtml;
   finalBtn.style.display=finalized?"none":"inline-block";
+}
+
+function checkTeamDraftConflicts(users,entries,month){
+  const found=[];
+  users.forEach(([u,info])=>{
+    const shifts=entries[info.id]||{};
+    for(let day=1;day<days(month);day++){
+      const current=shifts[String(day)]||"",next=shifts[String(day+1)]||"";
+      if(current==="N" && next==="T")found.push({userId:info.id,name:info.name,day:day+1,message:"Am "+day+"."+month.split("-")[1]+" Nachtdienst und am "+(day+1)+"."+month.split("-")[1]+" direkt danach Tagdienst – bitte Ruhezeit prüfen."});
+    }
+  });
+  return found;
 }
 
 async function saveTeamDraftCell(userId,day,value){
