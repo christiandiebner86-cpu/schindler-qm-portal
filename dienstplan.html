@@ -3676,7 +3676,7 @@ function draftMonth(){return document.getElementById("adminMonth")?.value || now
 function draftTeam(){return document.getElementById("adminDraftTeam")?.value || "";}
 function draftEntryFor(userId,day){return (qmTeamDraftCache?.entries?.[userId]||{})[String(day)]||"";}
 function draftResponseFor(userId){return (qmTeamDraftCache?.responses||{})[userId]||null;}
-function draftTeamUsers(team){return teamUsers(team).filter(([u,info])=>info.id&&(!info.isAdmin||info.isLeader));}
+function draftTeamUsers(team){return teamUsers(team).filter(([u,info])=>info.id&&!info.isAdmin);}
 
 function ensureDraftTeamOptions(){
   const select=document.getElementById("adminDraftTeam");
