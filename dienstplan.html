@@ -901,13 +901,13 @@ button.danger{
           <strong id="qmLoggedUser">Benutzer</strong>
           <span id="qmLoggedRole">Mitarbeiter</span>
         </div>
-        <a class="qm-back" href="index.html">← QM-Portal</a>
+        <a class="qm-back" href="index.html?returnFromDuty=1">← QM-Portal</a>
       </div>
     </div>
   </header>
   <nav class="qm-nav">
     <div class="qm-nav-inner">
-      <a href="index.html">🏠 Start</a>
+      <a href="index.html?returnFromDuty=1">🏠 Start</a>
       <a href="dienstplan.html" class="active">📅 Dienstwunschplan</a>
     </div>
   </nav>
@@ -4396,7 +4396,7 @@ function renderLog(id,m,team,leaderOnly){
 <div id="portalAuthGate">
   <h2>📅 Dienstwunschplan</h2>
   <p id="portalAuthMessage">QM-Anmeldung wird geprüft …</p>
-  <a href="index.html">Zum QM-Portal</a>
+  <a href="index.html?returnFromDuty=1">Zum QM-Portal</a>
 </div>
 
 
@@ -4784,7 +4784,7 @@ window.addEventListener("DOMContentLoaded",qmOpenDutyPlanner);
 <script>
 /* Session-Übergabe zurück ins Schindler-QM-Portal markieren. */
 (function(){
-  document.querySelectorAll('a[href="index.html"]').forEach(function(link){
+  document.querySelectorAll('a[href="index.html?returnFromDuty=1"]').forEach(function(link){
     link.addEventListener('click',function(){
       try{
         localStorage.setItem('qm-schindler-duty-handoff',String(Date.now()));
