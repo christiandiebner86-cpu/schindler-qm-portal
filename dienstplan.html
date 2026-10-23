@@ -877,6 +877,21 @@ button.danger{
 .collapsible-card-heading h3{margin:0;flex:1}
 .collapsible-card-toggle{flex-shrink:0;padding:6px 10px;font-size:12px;white-space:nowrap}
 .collapsible-card-body.is-collapsed{display:none!important}
+
+/* ADMIN-UI-POLISH-2026-10: kompaktere, ruhigere Dienstwunsch-Übersicht */
+#adminTable{min-width:0;width:max-content;min-width:100%;border-collapse:separate;border-spacing:0;background:#fff;font-size:13px}
+#adminTable thead th{background:#f1f5f9;color:#334155;font-weight:750;border-bottom:1px solid #cbd5e1;height:48px;padding:7px 5px!important}
+#adminTable tbody tr:nth-child(even) td,#adminTable tbody tr:nth-child(even) th{background:#f8fafc}
+#adminTable tbody tr:hover td,#adminTable tbody tr:hover th{background:#eff6ff}
+#adminTable tbody th:first-child{min-width:210px!important;max-width:250px;padding:10px 12px!important;font-weight:700;white-space:normal;line-height:1.3;border-right:1px solid #dbe3ec;box-shadow:2px 0 5px rgba(15,23,42,.035)}
+#adminTable tbody td{min-width:43px;padding:3px!important}
+#adminTable select{width:40px!important;min-width:40px!important;height:34px!important;min-height:34px!important;padding:2px!important;border:1px solid #d5dee8;border-radius:7px;background:#fff;font-size:13px!important;transition:border-color .15s,box-shadow .15s}
+#adminTable select:focus{outline:0;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.13)}
+#adminTable .badge{margin:5px 0 0;padding:4px 8px;line-height:1.25;white-space:normal}
+#adminTable .badge.wait{background:#fff1cc;color:#8a4b08;border:1px solid #f4d58d}
+#adminTable .badge.ok{background:#dcfce7;color:#166534;border:1px solid #bbf7d0}
+@media(max-width:700px){#adminTable tbody th:first-child{min-width:160px!important;max-width:180px}#adminTable tbody td{min-width:39px}#adminTable select{width:36px!important;min-width:36px!important}}
+
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
