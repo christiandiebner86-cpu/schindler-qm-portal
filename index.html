@@ -6961,6 +6961,10 @@ function startAuthListener() {
 
 async function startApplication() {
 
+  // QM-Formular-Tabs direkt beim Seitenstart aktivieren.
+  // Sonst wird der Klick-Handler erst beim Drucken registriert.
+  qmInitForms();
+
   setupDocumentViewer();
 
   setupDocumentSearch();
