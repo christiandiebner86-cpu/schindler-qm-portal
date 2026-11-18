@@ -2337,6 +2337,8 @@ body.document-viewer-open {
       <div class="qm-form-tabs" role="tablist">
         <button type="button" class="qm-form-tab active" data-qm-tab="pflegevisite">📋 Pflegevisite QPR 2026</button>
         <button type="button" class="qm-form-tab" data-qm-tab="begleitung">👩‍⚕️ Ergänzende praktische Begleitung</button>
+        <button type="button" class="qm-form-tab" data-qm-tab="dienstberatung">🗣️ Dienstberatung</button>
+        <button type="button" class="qm-form-tab" data-qm-tab="fallbesprechung">🧩 Fallbesprechung</button>
       </div>
 
       <div id="qmFormPflegevisite" class="qm-form-card active">
@@ -2502,6 +2504,86 @@ body.document-viewer-open {
           <div class="qm-field"><label for="bzeichen2">Unterschrift Begleitung</label><input id="bzeichen2" type="text"></div>
         </div>
         <div class="qm-form-actions"><button type="button" class="qm-btn-print" onclick="printQmForm('begleitung')">🖨️ Drucken / PDF</button><button type="button" class="qm-btn-reset" onclick="resetQmForm('begleitung')">↺ Formular leeren</button></div>
+      </div>
+
+      <div id="qmFormDienstberatung" class="qm-form-card">
+        <div class="qm-record-toolbar">
+          <label class="qm-record-select-wrap">
+            <span>Gespeicherte Dienstberatungen</span>
+            <select id="qmDienstberatungRecordSelect" onchange="qmLoadSelectedRecord('dienstberatung',this.value)">
+              <option value="">+ Neue Dienstberatung</option>
+            </select>
+          </label>
+          <div class="qm-record-actions">
+            <button type="button" onclick="qmSaveForm('dienstberatung')">💾 Speichern</button>
+            <button type="button" onclick="qmRefreshRecords('dienstberatung')">🔄 Liste aktualisieren</button>
+            <button type="button" class="qm-btn-delete" onclick="qmDeleteCurrentRecord('dienstberatung')">🗑️ Löschen</button>
+          </div>
+        </div>
+        <div class="qm-form-head"><div><h3>Dienstberatung</h3><div class="qm-form-subtitle">Protokoll für Teambesprechungen, Informationen, Beschlüsse und Aufgaben</div></div></div>
+        <div class="qm-form-grid">
+          <div class="qm-field"><label for="dbdatum">Datum</label><input id="dbdatum" type="date"></div>
+          <div class="qm-field"><label for="dbzeit">Uhrzeit</label><input id="dbzeit" type="text" placeholder="z. B. 10:00–11:30 Uhr"></div>
+          <div class="qm-field"><label for="dbort">Ort / Bereich</label><input id="dbort" type="text"></div>
+          <div class="qm-field"><label for="dbleitung">Leitung der Dienstberatung</label><input id="dbleitung" type="text"></div>
+          <div class="qm-field"><label for="dbprotokoll">Protokollführung</label><input id="dbprotokoll" type="text"></div>
+          <div class="qm-field"><label for="dbezeichnung">Team / Thema (für die Ablage)</label><input id="dbezeichnung" type="text" placeholder="z. B. Team Frühdienst"></div>
+          <div class="qm-field full"><label for="dbteilnehmer">Teilnehmerinnen / Teilnehmer</label><textarea id="dbteilnehmer" rows="3"></textarea></div>
+          <div class="qm-field full"><label for="dbentschuldigt">Entschuldigt</label><textarea id="dbentschuldigt" rows="2"></textarea></div>
+          <div class="qm-field full"><label for="dbagenda">Tagesordnung / Besprechungspunkte</label><textarea id="dbagenda" rows="4"></textarea></div>
+          <div class="qm-field full"><label for="dbthemen">Besprochene Themen und Ergebnisse</label><textarea id="dbthemen" rows="6"></textarea></div>
+          <div class="qm-field full"><label for="dbbeschluesse">Beschlüsse und Vereinbarungen</label><textarea id="dbbeschluesse" rows="5"></textarea></div>
+          <div class="qm-field full"><label for="dbmassnahmen">Maßnahmen, Verantwortlichkeiten und Termine</label><textarea id="dbmassnahmen" rows="5" placeholder="Maßnahme – verantwortlich – Termin"></textarea></div>
+          <div class="qm-field"><label for="dbfolgetermin">Nächster Beratungstermin</label><input id="dbfolgetermin" type="date"></div>
+          <div class="qm-field"><label for="dbfreigabe">Kenntnisnahme / Leitung</label><input id="dbfreigabe" type="text"></div>
+          <div class="qm-field"><label for="dbzeichen1">Unterschrift Protokollführung</label><input id="dbzeichen1" type="text"></div>
+          <div class="qm-field"><label for="dbzeichen2">Unterschrift Leitung</label><input id="dbzeichen2" type="text"></div>
+        </div>
+        <div class="qm-form-actions">
+          <button type="button" class="qm-btn-print" onclick="printQmForm('dienstberatung')">🖨️ Drucken / PDF</button>
+          <button type="button" class="qm-btn-reset" onclick="resetQmForm('dienstberatung')">↺ Formular leeren</button>
+        </div>
+      </div>
+
+      <div id="qmFormFallbesprechung" class="qm-form-card">
+        <div class="qm-record-toolbar">
+          <label class="qm-record-select-wrap">
+            <span>Gespeicherte Fallbesprechungen</span>
+            <select id="qmFallbesprechungRecordSelect" onchange="qmLoadSelectedRecord('fallbesprechung',this.value)">
+              <option value="">+ Neue Fallbesprechung</option>
+            </select>
+          </label>
+          <div class="qm-record-actions">
+            <button type="button" onclick="qmSaveForm('fallbesprechung')">💾 Speichern</button>
+            <button type="button" onclick="qmRefreshRecords('fallbesprechung')">🔄 Liste aktualisieren</button>
+            <button type="button" class="qm-btn-delete" onclick="qmDeleteCurrentRecord('fallbesprechung')">🗑️ Löschen</button>
+          </div>
+        </div>
+        <div class="qm-form-head"><div><h3>Fallbesprechung</h3><div class="qm-form-subtitle">Strukturierte fachliche Einschätzung, Ziele, Maßnahmen und Verlaufskontrolle</div></div></div>
+        <div class="qm-note">Datenschutz: Bitte ausschließlich ein internes Fallkürzel verwenden und nur die für die Besprechung erforderlichen Angaben dokumentieren. Das Formular ist – wie die bestehenden digitalen QM-Formulare – nur für aktive Administratoren zugänglich.</div>
+        <div class="qm-form-grid">
+          <div class="qm-field"><label for="fbdatum">Datum</label><input id="fbdatum" type="date"></div>
+          <div class="qm-field"><label for="fbzeit">Uhrzeit</label><input id="fbzeit" type="text" placeholder="Beginn / Ende"></div>
+          <div class="qm-field"><label for="fbcode">Fallkürzel (keinen Klarnamen eintragen)</label><input id="fbcode" type="text" placeholder="z. B. Fall 01" required></div>
+          <div class="qm-field"><label for="fbmoderation">Moderation / Gesprächsleitung</label><input id="fbmoderation" type="text"></div>
+          <div class="qm-field"><label for="fbprotokoll">Protokollführung</label><input id="fbprotokoll" type="text"></div>
+          <div class="qm-field"><label for="fbpruefung">Geplante Überprüfung am</label><input id="fbpruefung" type="date"></div>
+          <div class="qm-field full"><label for="fbteilnehmer">Teilnehmerinnen / Teilnehmer</label><textarea id="fbteilnehmer" rows="3"></textarea></div>
+          <div class="qm-field full"><label for="fbanlass">1. Anlass und Fragestellung der Fallbesprechung</label><textarea id="fbanlass" rows="4"></textarea></div>
+          <div class="qm-field full"><label for="fbsituation">2. Aktuelle Situation / Sachstand</label><textarea id="fbsituation" rows="5"></textarea></div>
+          <div class="qm-field full"><label for="fbressourcen">3. Ressourcen, Fähigkeiten und fördernde Faktoren</label><textarea id="fbressourcen" rows="4"></textarea></div>
+          <div class="qm-field full"><label for="fbprobleme">4. Problemlagen, Risiken und Unterstützungsbedarf</label><textarea id="fbprobleme" rows="5"></textarea></div>
+          <div class="qm-field full"><label for="fbeinschaetzung">5. Gemeinsame fachliche Einschätzung / Hypothesen</label><textarea id="fbeinschaetzung" rows="5"></textarea></div>
+          <div class="qm-field full"><label for="fbziele">6. Ziele und gewünschte Veränderungen</label><textarea id="fbziele" rows="4"></textarea></div>
+          <div class="qm-field full"><label for="fbmassnahmen">7. Vereinbarte Maßnahmen, Zuständigkeiten und Fristen</label><textarea id="fbmassnahmen" rows="6" placeholder="Maßnahme – verantwortlich – bis wann"></textarea></div>
+          <div class="qm-field full"><label for="fbverlauf">8. Ergebnis / weitere Beobachtung / Verlaufskontrolle</label><textarea id="fbverlauf" rows="4"></textarea></div>
+          <div class="qm-field"><label for="fbzeichen1">Unterschrift Moderation</label><input id="fbzeichen1" type="text"></div>
+          <div class="qm-field"><label for="fbzeichen2">Unterschrift Protokollführung</label><input id="fbzeichen2" type="text"></div>
+        </div>
+        <div class="qm-form-actions">
+          <button type="button" class="qm-btn-print" onclick="printQmForm('fallbesprechung')">🖨️ Drucken / PDF</button>
+          <button type="button" class="qm-btn-reset" onclick="resetQmForm('fallbesprechung')">↺ Formular leeren</button>
+        </div>
       </div>
 
       </div>
@@ -4115,8 +4197,7 @@ async function initializePortal() {
     ) {
 
       await loadAdminProfiles();
-      await qmLoadSavedQmRecords("pflegevisite");
-      await qmLoadSavedQmRecords("begleitung");
+      for(const formType of qmFormTypes){await qmLoadSavedQmRecords(formType);}
 
     }
 
@@ -5082,10 +5163,9 @@ function qmInitForms(){
     btn.addEventListener("click",function(){
       const tab=btn.dataset.qmTab;
       document.querySelectorAll("[data-qm-tab]").forEach(function(b){b.classList.toggle("active",b.dataset.qmTab===tab);});
-      const pv=document.getElementById("qmFormPflegevisite");
-      const bm=document.getElementById("qmFormBegleitung");
-      if(pv)pv.classList.toggle("active",tab==="pflegevisite");
-      if(bm)bm.classList.toggle("active",tab==="begleitung");
+      document.querySelectorAll(".qm-form-card").forEach(function(card){
+        card.classList.toggle("active",card.id==="qmForm"+tab.charAt(0).toUpperCase()+tab.slice(1));
+      });
     });
   });
 }
@@ -5117,7 +5197,7 @@ function printQmForm(type){
     html+=qmPrintSection("Ergänzende pflegerische / medizinische Angaben",'<table class="qm-print-table"><thead><tr><th>Prüfpunkt</th><th>Angabe</th><th>Details / Intervall</th></tr></thead><tbody>'+specials.map(function(x){return '<tr><td>'+qmEscape(x[0])+'</td><td>'+qmEscape(x[1]||"–")+'</td><td>'+qmEscape(x[2]||"–")+'</td></tr>';}).join("")+'</tbody></table>');
     html+=qmPrintSection("Ergänzungen / Angaben zur Zufriedenheit",'<div class="qm-print-box">'+qmEscape(qmText("qmzufriedenheit")).replace(/\n/g,"<br>")+'</div>');
     html+='<div class="qm-print-signatures"><div class="qm-print-sign">'+qmEscape(qmText("qmzeichen1")||"Name / Unterschrift Pflegevisite")+'</div><div class="qm-print-sign">'+qmEscape(qmText("qmzeichen2")||"Name / Unterschrift")+'</div></div>';
-  }else{
+  }else if(type==="begleitung"){
     html+='<div class="qm-print-title">Ergänzende praktische Begleitung</div><div class="qm-print-meta">Digitale QM-Erfassung · Ausdruck / PDF</div>';
     html+='<div class="qm-print-grid">'+qmPrintField("Mitarbeiter",qmText("bmitarbeiter"))+qmPrintField("Team / Bereich",qmText("bteam"))+qmPrintField("Datum",qmPrintDate(qmText("bdatum")))+qmPrintField("Begleitung durch",qmText("bbegleiter"))+qmPrintField("Funktion / Tätigkeit",qmText("bposition"))+'</div>';
     const bs=[["Endotracheales Absaugen","endo"],["Orales Absaugen","oral"],["Wundversorgung","wunde"],["Tracheostomaversorgung","tracheo"],["Hygiene / Händedesinfektion","hygiene"],["Weitere praktische Tätigkeit","weitere"]];
@@ -5128,6 +5208,20 @@ function printQmForm(type){
     html+=qmPrintSection("Ergänzende praktische Begleitung",'<table class="qm-print-table"><thead><tr><th>Tätigkeit</th><th>Durchführung</th><th>Beobachtung / Hinweise</th></tr></thead><tbody>'+bs.map(function(x){return '<tr><td>'+qmEscape(x[0])+'</td><td class="qm-print-status">'+qmEscape(qmStatus('[data-b-status="'+x[1]+'"]'))+'</td><td>'+qmEscape(qmNote('[data-b-note="'+x[1]+'"]')).replace(/\n/g,"<br>")+'</td></tr>';}).join("")+'</tbody></table>');
     html+=qmPrintSection("Ergebnis / Entwicklungsbedarf",'<div class="qm-print-grid">'+qmPrintField("Festgestellter Unterstützungs- oder Schulungsbedarf",qmText("bschulung"))+qmPrintField("Vereinbarte Maßnahme / Nachschulung",qmText("bmassnahme"))+qmPrintField("Gesamtergebnis",qmText("bergebnis"))+qmPrintField("Erneute Begleitung am",qmPrintDate(qmText("bfolge")))+'</div>');
     html+='<div class="qm-print-signatures"><div class="qm-print-sign">'+qmEscape(qmText("bzeichen1")||"Unterschrift Mitarbeiter")+'</div><div class="qm-print-sign">'+qmEscape(qmText("bzeichen2")||"Unterschrift Begleitung")+'</div></div>';
+  }else{
+    const card=qmFormCard(type);
+    html+='<div class="qm-print-title">'+qmEscape(qmFormTitle(type))+'</div><div class="qm-print-meta">Schindler Intensivpflege GmbH · Qualitätsmanagement · Ausdruck / PDF</div>';
+    if(card){
+      const fields=Array.from(card.querySelectorAll(".qm-field"));
+      html+='<div class="qm-print-grid">'+fields.map(function(field){
+        const label=field.querySelector("label");
+        const control=field.querySelector("input,select,textarea");
+        if(!control)return "";
+        let value=control.value||"–";
+        if(control.type==="date")value=qmPrintDate(value);
+        return qmPrintField(label?label.textContent.trim():"Angabe",value);
+      }).join("")+'</div>';
+    }
   }
   area.innerHTML=html;
   const originalParent=area.parentNode;
@@ -5158,14 +5252,22 @@ function resetQmForm(type){
 /* =========================================================
    GESPEICHERTE QM-FORMULARE
 ========================================================= */
-const qmSavedFormRecords = { pflegevisite: [], begleitung: [] };
-const qmCurrentFormRecordId = { pflegevisite: "", begleitung: "" };
+const qmFormTypes = ["pflegevisite","begleitung","dienstberatung","fallbesprechung"];
+const qmFormTitles = {
+  pflegevisite:"Pflegevisite QPR 2026",
+  begleitung:"Ergänzende praktische Begleitung",
+  dienstberatung:"Dienstberatung",
+  fallbesprechung:"Fallbesprechung"
+};
+const qmSavedFormRecords = { pflegevisite: [], begleitung: [], dienstberatung: [], fallbesprechung: [] };
+const qmCurrentFormRecordId = { pflegevisite: "", begleitung: "", dienstberatung: "", fallbesprechung: "" };
 
+function qmFormTitle(type){return qmFormTitles[type]||"QM-Formular";}
 function qmFormCard(type){
-  return document.getElementById(type === "pflegevisite" ? "qmFormPflegevisite" : "qmFormBegleitung");
+  return document.getElementById("qmForm"+type.charAt(0).toUpperCase()+type.slice(1));
 }
 function qmRecordSelect(type){
-  return document.getElementById(type === "pflegevisite" ? "qmPflegevisiteRecordSelect" : "qmBegleitungRecordSelect");
+  return document.getElementById("qm"+type.charAt(0).toUpperCase()+type.slice(1)+"RecordSelect");
 }
 function qmCollectFormData(type){
   const card=qmFormCard(type);
@@ -5198,7 +5300,7 @@ function qmNewFormRecord(type){
 }
 function qmFormatRecordLabel(record){
   const when=record.updated_at?new Date(record.updated_at).toLocaleDateString("de-DE"):"";
-  return (when?when+" · ":"")+(record.subject_name||"Ohne Zuordnung")+" · "+(record.form_type==="pflegevisite"?"Pflegevisite":"Begleitung");
+  return (when?when+" · ":"")+(record.subject_name||"Ohne Zuordnung")+" · "+qmFormTitle(record.form_type);
 }
 async function qmLoadSavedQmRecords(type){
   if(!currentProfile || currentProfile.role!=="admin" || currentProfile.active!==true)return;
@@ -5210,7 +5312,7 @@ async function qmLoadSavedQmRecords(type){
     const result=await withTimeout(supabaseClient.rpc("admin_list_qm_form_records",{p_form_type:type}),10000,"Die gespeicherten QM-Formulare konnten nicht geladen werden.");
     if(result.error)throw result.error;
     qmSavedFormRecords[type]=Array.isArray(result.data)?result.data:[];
-    sel.innerHTML="<option value=''>+ Neue "+(type==="pflegevisite"?"Pflegevisite":"Begleitung")+"</option>";
+    sel.innerHTML="<option value=''>+ Neue "+qmFormTitle(type)+"</option>";
     qmSavedFormRecords[type].forEach(function(record){
       const option=document.createElement("option");
       option.value=record.id;
@@ -5237,15 +5339,17 @@ async function qmSaveForm(type){
     alert("Nur aktive Administratoren dürfen QM-Formulare speichern."); return;
   }
   const data=qmCollectFormData(type);
-  const subjectName=type==="pflegevisite"?String(data.qmpatient||"").trim():String(data.bmitarbeiter||"").trim();
+  const subjectFields={pflegevisite:"qmpatient",begleitung:"bmitarbeiter",dienstberatung:"dbezeichnung",fallbesprechung:"fbcode"};
+  const subjectName=String(data[subjectFields[type]]||"").trim() ||
+    (type==="dienstberatung" && data.dbdatum ? "Dienstberatung "+data.dbdatum : "");
   if(!subjectName){
-    alert(type==="pflegevisite"?"Bitte zuerst Patient / Bewohner eintragen.":"Bitte zuerst den Mitarbeiter eintragen."); return;
+    alert(type==="fallbesprechung"?"Bitte ein anonymisiertes Fallkürzel eintragen.":type==="dienstberatung"?"Bitte Team / Thema oder Datum eintragen.":type==="pflegevisite"?"Bitte zuerst Patient / Bewohner eintragen.":"Bitte zuerst den Mitarbeiter eintragen."); return;
   }
   const existing=qmSavedFormRecords[type].find(function(item){return item.id===qmCurrentFormRecordId[type];});
   const payload={
     ...(existing?{id:existing.id,created_by:existing.created_by}:{}),
     form_type:type,
-    title:type==="pflegevisite"?"Pflegevisite QPR 2026":"Ergänzende praktische Begleitung",
+    title:qmFormTitle(type),
     subject_name:subjectName,
     subject_birth_date:type==="pflegevisite"?(data.qmbirth||null):null,
     form_data:data,
