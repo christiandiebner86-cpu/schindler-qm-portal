@@ -5241,10 +5241,13 @@ function printQmForm(type){
 
 function resetQmForm(type){
   if(!confirm("Dieses QM-Formular wirklich leeren?"))return;
-  const card=document.getElementById(type==="pflegevisite"?"qmFormPflegevisite":"qmFormBegleitung");
+  const card=qmFormCard(type);
   if(!card)return;
   card.querySelectorAll("input,textarea").forEach(function(el){el.value="";});
   card.querySelectorAll("select").forEach(function(el){el.selectedIndex=0;});
+  qmCurrentFormRecordId[type]="";
+  const select=qmRecordSelect(type);
+  if(select)select.value="";
 }
 
 
