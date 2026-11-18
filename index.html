@@ -962,6 +962,10 @@ main {
   body.qm-printing > *:not(#qmPrintArea){display:none!important}
   #qmPrintArea{display:block!important;position:static!important;width:auto!important;min-height:0!important;margin:0!important;padding:12mm 15mm!important;background:#fff!important;color:#222!important}
   #qmPrintArea,#qmPrintArea *{visibility:visible!important}
+  .qm-print-brand{display:flex;align-items:center;gap:16px;padding:0 0 12px;margin:0 0 18px;border-bottom:3px solid #0b6570}
+  .qm-print-brand img{width:76px;height:58px;object-fit:contain}
+  .qm-print-brand-text{font-size:20px;font-weight:800;letter-spacing:.2px;color:#17313a}
+  .qm-print-brand-sub{font-size:10px;font-weight:700;letter-spacing:2px;color:#0b6570;margin-top:4px}
   .qm-print-title{font-size:22px;font-weight:800;color:#17313a;margin-bottom:4px}
   .qm-print-meta{font-size:12px;color:#5f6c72;margin-bottom:16px}
   .qm-print-section{margin-top:16px;break-inside:avoid;page-break-inside:avoid}
@@ -5183,6 +5187,7 @@ function printQmForm(type){
   const area=document.getElementById("qmPrintArea");
   if(!area)return;
   let html="";
+  html+='<div class="qm-print-brand"><img src="schindler-logo.png" alt="Schindler Intensivpflege GmbH"><div><div class="qm-print-brand-text">Schindler Intensivpflege GmbH</div><div class="qm-print-brand-sub">QUALITÄTSMANAGEMENT</div></div></div>';
   if(type==="pflegevisite"){
     html+='<div class="qm-print-title">Pflegevisite QPR 2026</div>';
     html+='<div class="qm-print-meta">Digitale QM-Erfassung · Ausdruck / PDF</div>';
