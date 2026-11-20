@@ -2280,6 +2280,16 @@ body.document-viewer-open {
     <br>
     <br>
 
+
+    <div id="qmAckAdminPanel" style="margin:24px 0;padding:20px;border:1px solid var(--line);border-radius:16px;background:#fbfcfa">
+      <div style="display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap">
+        <div><h3 style="margin:0">📋 QM-Lesebestätigungen</h3><p style="margin:5px 0;color:var(--muted)">Pro Dokument siehst du, wer die aktuelle Version bestätigt hat und bei wem die Bestätigung noch fehlt.</p></div>
+        <button class="btn-refresh" type="button" onclick="loadQmDocumentAckReport()">🔄 Lesestatus laden</button>
+      </div>
+      <div id="qmAckAdminStatus" style="margin-top:12px;color:var(--muted)">Noch nicht geladen.</div>
+      <div id="qmAckAdminList" style="margin-top:12px"></div>
+    </div>
+
     <div class="admin-table-wrap">
 
       <table class="admin-table">
@@ -2681,6 +2691,9 @@ body.document-viewer-open {
       >
         ✕ Schließen
       </button>
+      <button id="documentAcknowledgeButton" type="button" style="border:0;border-radius:9px;padding:9px 12px;background:#dff5e8;color:#17613f;font-weight:800;cursor:pointer;display:none">
+        ✓ Gelesen und zur Kenntnis genommen
+      </button>
     </div>
 
     <iframe
@@ -2779,6 +2792,8 @@ let authListenerStarted = false;
 let authStateVersion = 0;
 let qmDocumentNotifications = [];
 let qmDocumentSyncRunning = false;
+let qmDocumentVersions = Object.create(null);
+let qmAckCurrentDocument = null;
 
 
 /* =========================================================
@@ -4346,6 +4361,50 @@ async function logout() {
 }
 
 
+
+
+async function loadQmDocumentAckReport() {
+  const status = getElement("qmAckAdminStatus");
+  const list = getElement("qmAckAdminList");
+  if (!status || !list || !currentProfile || currentProfile.role !== "admin" || currentProfile.active !== true) return;
+  status.textContent = "Lesebestätigungen werden geladen …";
+  list.innerHTML = "";
+  try {
+    const result = await supabaseClient.rpc("get_qm_document_ack_status");
+    if (result.error) throw result.error;
+    const rows = Array.isArray(result.data) ? result.data : [];
+    const groups = new Map();
+    rows.forEach(function(row) {
+      const key = String(row.path);
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(row);
+    });
+    if (!groups.size) {
+      status.textContent = "Noch keine QM-Dokumente erfasst. Bitte einmal das Portal als Administrator öffnen und synchronisieren.";
+      return;
+    }
+    let confirmed = 0, total = 0;
+    const html = [];
+    groups.forEach(function(items, path) {
+      const version = Number(items[0].version || 1);
+      const done = items.filter(function(item) { return Number(item.acknowledged_version || 0) >= version; }).length;
+      total += items.length; confirmed += done;
+      const rowsHtml = items.map(function(item) {
+        const ok = Number(item.acknowledged_version || 0) >= version;
+        const date = item.acknowledged_at ? new Date(item.acknowledged_at).toLocaleString("de-DE") : "—";
+        return "<tr><td>" + escapeHTML(item.employee_name || "Unbenannt") + "</td><td>" + escapeHTML(item.team || "—") + "</td><td>" + (ok ? "✓ Bestätigt" : "Noch offen") + "</td><td>" + escapeHTML(ok ? date : "—") + "</td></tr>";
+      }).join("");
+      html.push("<details style='margin:8px 0;padding:12px;border:1px solid var(--line);border-radius:12px;background:#fff'><summary style='cursor:pointer;font-weight:800'>" + escapeHTML(path.split("/").pop()) + " · " + done + "/" + items.length + " bestätigt · Version " + version + "</summary><div style='overflow-x:auto;margin-top:10px'><table class='admin-table' style='min-width:580px'><thead><tr><th>Mitarbeiter</th><th>Team</th><th>Status</th><th>Bestätigt am</th></tr></thead><tbody>" + rowsHtml + "</tbody></table></div></details>");
+    });
+    status.textContent = confirmed + " von " + total + " Bestätigungen vorhanden (" + groups.size + " Dokumente).";
+    list.innerHTML = html.join("");
+  } catch (error) {
+    console.error("QM-Lesestatus:", error);
+    status.textContent = "Lesestatus konnte nicht geladen werden: " + (error.message || "Unbekannter Fehler");
+  }
+}
+
+
 /* =========================================================
    ADMIN PROFILE
 ========================================================= */
@@ -5480,7 +5539,7 @@ function fileIcon(path) {
    DOKUMENT-NEUIGKEITEN
 ========================================================= */
 
-function isPortalQmPdf(item) {
+function isPortalQmDocument(item) {
   if (!item || item.type !== "blob") {
     return false;
   }
@@ -5488,7 +5547,7 @@ function isPortalQmPdf(item) {
   const path = String(item.path || "");
   const lower = path.toLowerCase();
 
-  if (!lower.endsWith(".pdf")) {
+  if (!/\.(pdf|doc|docx|xls|xlsx|odt|ods|ppt|pptx|rtf|txt|odp|odg|csv|md)$/i.test(lower)) {
     return false;
   }
 
@@ -5507,11 +5566,11 @@ function isPortalQmPdf(item) {
 }
 
 
-function currentPortalQmPdfMap() {
+function currentPortalQmDocumentMap() {
   const map = new Map();
 
   repositoryTree.forEach(function(item) {
-    if (!isPortalQmPdf(item)) {
+    if (!isPortalQmDocument(item)) {
       return;
     }
 
@@ -5583,16 +5642,18 @@ async function syncAndLoadQmDocumentNews() {
     });
 
     if (docs.length) {
-      const syncResult =
-        await supabaseClient.rpc(
-          "sync_qm_documents",
-          { p_documents: docs }
-        );
-
-      if (syncResult.error) {
-        throw syncResult.error;
+      if (currentProfile.role === "admin") {
+        const syncResult = await supabaseClient.rpc("sync_qm_documents", { p_documents: docs });
+        if (syncResult.error) throw syncResult.error;
       }
     }
+
+    const versionResult = await supabaseClient.rpc("get_qm_document_versions");
+    if (versionResult.error) throw versionResult.error;
+    qmDocumentVersions = Object.create(null);
+    (versionResult.data || []).forEach(function(row) {
+      qmDocumentVersions[String(row.path)] = Number(row.version || 1);
+    });
 
     const result =
       await supabaseClient.rpc(
@@ -5613,6 +5674,7 @@ async function syncAndLoadQmDocumentNews() {
         });
 
     renderQmDocumentNews();
+    if (currentProfile.role === "admin") loadQmDocumentAckReport();
   }
   catch (error) {
     /*
@@ -6341,7 +6403,7 @@ function renderDocumentSearch(query) {
 
       return `
         <a
-          class="search-result-card${rawName.toLowerCase().endsWith(".pdf") ? " js-document-preview" : ""}"
+          class="search-result-card${isPortalQmDocument({type:"blob",path:file.path}) ? " js-document-preview" : ""}"
           href="${escapeHTML(fileURL(file.path))}"
           data-document-name="${escapeHTML(cleanFileName(rawName))}"
           data-document-path="${escapeHTML(file.path)}"
@@ -6834,7 +6896,7 @@ function openFolder(path, anchorCard) {
 
         html += `
           <a
-            class="file-card${extension === "pdf" ? " js-document-preview" : ""}"
+            class="file-card${isPortalQmDocument({type:"blob",path:file.path}) ? " js-document-preview" : ""}"
             href="${escapeHTML(url)}"
             data-document-name="${escapeHTML(cleanFileName(name))}"
             data-document-path="${escapeHTML(file.path)}"
@@ -7183,7 +7245,7 @@ async function startApplication() {
    PDF-DOKUMENTE DIREKT IM PORTAL ANZEIGEN
 ========================================================= */
 
-function openDocumentViewer(url, name) {
+function openDocumentViewer(url, name, path) {
 
   const viewer =
     getElement("documentViewer");
@@ -7203,6 +7265,14 @@ function openDocumentViewer(url, name) {
   }
 
   frame.src = url;
+  qmAckCurrentDocument = path ? { path: String(path), version: Number(qmDocumentVersions[String(path)] || 1) } : null;
+  const ackButton = getElement("documentAcknowledgeButton");
+  if (ackButton) {
+    ackButton.style.display = qmAckCurrentDocument ? "inline-block" : "none";
+    ackButton.disabled = false;
+    ackButton.textContent = "✓ Gelesen und zur Kenntnis genommen";
+    ackButton.style.background = "#dff5e8";
+  }
 
   if (title) {
     title.textContent = name || "Dokument";
@@ -7234,6 +7304,7 @@ function closeDocumentViewer() {
   if (frame) {
     frame.src = "about:blank";
   }
+  qmAckCurrentDocument = null;
 
   document.body.classList.remove("document-viewer-open");
 }
@@ -7289,7 +7360,8 @@ function setupDocumentViewer() {
 
       openDocumentViewer(
         link.href,
-        link.dataset.documentName || "Dokument"
+        link.dataset.documentName || "Dokument",
+        documentPath
       );
 
       if (documentPath) {
@@ -7306,6 +7378,30 @@ function setupDocumentViewer() {
       "click",
       closeDocumentViewer
     );
+  }
+
+  const ackButton = getElement("documentAcknowledgeButton");
+  if (ackButton) {
+    ackButton.addEventListener("click", async function() {
+      if (!qmAckCurrentDocument || !supabaseClient || !currentUser) return;
+      ackButton.disabled = true;
+      ackButton.textContent = "Wird gespeichert …";
+      try {
+        const result = await supabaseClient.rpc("acknowledge_qm_document", {
+          p_path: qmAckCurrentDocument.path,
+          p_version: qmAckCurrentDocument.version
+        });
+        if (result.error) throw result.error;
+        ackButton.textContent = "✓ Bestätigt";
+        ackButton.style.background = "#dff5e8";
+        ackButton.title = "Deine Lesebestätigung wurde gespeichert.";
+      } catch (error) {
+        console.error("QM-Lesebestätigung:", error);
+        ackButton.disabled = false;
+        ackButton.textContent = "Erneut versuchen – Bestätigung speichern";
+        alert("Die Lesebestätigung konnte nicht gespeichert werden: " + (error.message || "Unbekannter Fehler"));
+      }
+    });
   }
 
   viewer.addEventListener(
