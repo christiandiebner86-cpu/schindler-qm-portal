@@ -5562,12 +5562,27 @@ function qmFormCard(type){
 function qmRecordSelect(type){
   return document.getElementById("qm"+type.charAt(0).toUpperCase()+type.slice(1)+"RecordSelect");
 }
+function qmFormFieldKey(el){
+  if(el.id)return el.id;
+  const fields=[
+    ["qmStatus","qm-status:"],
+    ["qmNote","qm-note:"],
+    ["qmSpecial","qm-special:"],
+    ["qmDetail","qm-detail:"],
+    ["bStatus","b-status:"],
+    ["bNote","b-note:"]
+  ];
+  for(const field of fields){
+    if(el.dataset[field[0]]!==undefined)return field[1]+el.dataset[field[0]];
+  }
+  return "";
+}
 function qmCollectFormData(type){
   const card=qmFormCard(type);
   if(!card)return {};
   const data={};
   card.querySelectorAll("input,select,textarea").forEach(function(el){
-    const key=el.id || el.dataset.qmStatus || el.dataset.qmNote || el.dataset.qmSpecial || el.dataset.qmDetail || el.dataset.bStatus || el.dataset.bNote;
+    const key=qmFormFieldKey(el);
     if(key)data[key]=el.value ?? "";
   });
   return data;
@@ -5577,8 +5592,18 @@ function qmApplyFormData(type,data){
   if(!card)return;
   const values=data||{};
   card.querySelectorAll("input,select,textarea").forEach(function(el){
-    const key=el.id || el.dataset.qmStatus || el.dataset.qmNote || el.dataset.qmSpecial || el.dataset.qmDetail || el.dataset.bStatus || el.dataset.bNote;
-    if(key && Object.prototype.hasOwnProperty.call(values,key))el.value=values[key]==null?"":String(values[key]);
+    el.value="";
+    const key=qmFormFieldKey(el);
+    if(!key)return;
+    if(Object.prototype.hasOwnProperty.call(values,key)){
+      el.value=values[key]==null?"":String(values[key]);
+      return;
+    }
+    // Alte, noch nicht präfixierte Datensätze weiterhin lesbar halten.
+    const legacyKey=el.id || el.dataset.qmStatus || el.dataset.qmNote || el.dataset.qmSpecial || el.dataset.qmDetail || el.dataset.bStatus || el.dataset.bNote;
+    if(legacyKey && Object.prototype.hasOwnProperty.call(values,legacyKey)){
+      el.value=values[legacyKey]==null?"":String(values[legacyKey]);
+    }
   });
 }
 function qmNewFormRecord(type){
